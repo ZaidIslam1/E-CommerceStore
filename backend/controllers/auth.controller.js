@@ -1,4 +1,40 @@
 import User from "../models/user.model.js";
+import jwt from "jsonwebtoken";
+import { redis } from "../config/redis.js";
+import bcrypt from "bcryptjs";
+
+const generateTokens = (userId) => {
+    const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+    const refreshToken = jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
+        expiresIn: "7d",
+    });
+
+    return { accessToken, refreshToken };
+};
+
+const storeRefreshToken = async (userId, refreshToken, next) => {
+    try {
+        await redis.set(`refreshToken: ${userId}`, refreshToken, "EX", 60 * 60 * 24 * 7); // Store for 7 days
+    } catch (error) {
+        console.error("Redis error in storeRefreshToken:", error);
+        next(error);
+    }
+};
+
+const setCookies = (res, accessToken, refreshToken) => {
+    res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+    });
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 15 minutes
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+    });
+};
 
 export const signup = async (req, res, next) => {
     try {
@@ -8,22 +44,53 @@ export const signup = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "User already exists" });
         }
         const user = await User.create({ name, email, password });
+
+        const { accessToken, refreshToken } = generateTokens(user._id);
+        await storeRefreshToken(user._id, refreshToken, next);
+
+        setCookies(res, accessToken, refreshToken);
         res.status(201).json({ success: true, user, message: "User created successfully" });
     } catch (error) {
+        console.error("Error in signup", error);
         next(error);
     }
 };
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
     try {
-        res.send("login controller");
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password are required" });
+        }
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: "Invalid email or password" });
+        }
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ error: "Invalid username or password" });
+        }
+
+        const { accessToken, refreshToken } = generateTokens(user._id);
+        setCookies(res, accessToken, refreshToken);
+
+        res.status(200).json({ success: true, user });
     } catch (error) {
+        console.error("Error in login", error);
         next(error);
     }
 };
-export const logout = async (req, res) => {
+export const logout = async (req, res, next) => {
     try {
-        res.send("logout controller");
+        res.cookie("accessToken", "", {
+            maxAge: 0,
+        });
+        res.cookie("refreshToken", "", {
+            maxAge: 0,
+        });
+        res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
+        console.error("Error in logout", error);
+
         next(error);
     }
 };
