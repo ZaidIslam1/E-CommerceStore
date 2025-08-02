@@ -51,7 +51,7 @@ export const signup = async (req, res, next) => {
         setCookies(res, accessToken, refreshToken);
         res.status(201).json({ success: true, user, message: "User created successfully" });
     } catch (error) {
-        console.error("Error in signup", error);
+        console.error("Error in signup", error.message);
         next(error);
     }
 };
@@ -62,34 +62,32 @@ export const login = async (req, res, next) => {
             return res.status(400).json({ error: "Email and password are required" });
         }
         const user = await User.findOne({ email });
-        if (!user) {
+        if (user && (await user.comparePassword(password))) {
+            const { accessToken, refreshToken } = generateTokens(user._id);
+            await storeRefreshToken(user._id, refreshToken);
+            setCookies(res, accessToken, refreshToken);
+        } else {
             return res.status(404).json({ error: "Invalid email or password" });
         }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return res.status(400).json({ error: "Invalid username or password" });
-        }
-
-        const { accessToken, refreshToken } = generateTokens(user._id);
-        setCookies(res, accessToken, refreshToken);
 
         res.status(200).json({ success: true, user });
     } catch (error) {
-        console.error("Error in login", error);
+        console.error("Error in login", error.message);
         next(error);
     }
 };
 export const logout = async (req, res, next) => {
     try {
-        res.cookie("accessToken", "", {
-            maxAge: 0,
-        });
-        res.cookie("refreshToken", "", {
-            maxAge: 0,
-        });
+        const refreshToken = res.cookie.refreshToken;
+        if (refreshToken) {
+            const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+            await redis.del(`refreshToken: ${decoded.userId}`);
+        }
+        res.clearCookie("refreshToken");
+        res.clearCookie("accessToken");
         res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
-        console.error("Error in logout", error);
+        console.error("Error in logout", error.message);
 
         next(error);
     }
