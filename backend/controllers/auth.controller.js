@@ -100,22 +100,37 @@ export const refreshToken = async (req, res, next) => {
             res.status(401).json({ message: "No refresh token provided" });
         }
 
-        const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-        const storedToken = await redis.get(`refreshToken: ${decoded.userId}`);
-
-        if (refreshToken !== storedToken) {
-            res.status(401).json({ message: "Invalid refresh token" });
+        try {
+            const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+            const storedToken = await redis.get(`refreshToken: ${decoded.userId}`);
+            if (refreshToken !== storedToken) {
+                res.status(401).json({ message: "Invalid refresh token" });
+            }
+            const accessToken = jwt.sign(
+                { userId: decoded.userId },
+                process.env.ACCESS_TOKEN_SECRET,
+                {
+                    expiresIn: "15m",
+                }
+            );
+            setCookies(res, accessToken, refreshToken);
+            res.status(200).json({ message: "Token Refreshed successfully" });
+        } catch (error) {
+            if (error.name === "TokenExpiredError") {
+                return res.status(401).json({ message: "Unauthorized - Access token expired" });
+            }
+            throw error;
         }
-
-        const accessToken = jwt.sign({ userId: decoded.userId }, process.env.ACCESS_TOKEN_SECRET, {
-            expiresIn: "15m",
-        });
-
-        setCookies(res, accessToken, refreshToken);
-
-        res.status(200).json({ message: "Token Refreshed successfully" });
     } catch (error) {
         console.error("Error in refreshToken", error.message);
+        next(error);
+    }
+};
+
+export const getProfile = async (req, res, next) => {
+    try {
+    } catch (error) {
+        console.error("Error in getProfile", error.message);
         next(error);
     }
 };

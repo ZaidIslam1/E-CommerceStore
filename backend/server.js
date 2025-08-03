@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.route.js";
+import productRoutes from "./routes/product.route.js";
 import connectDB from "./config/connectDB.js";
 import cookieParser from "cookie-parser";
 dotenv.config();
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
 
 app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
