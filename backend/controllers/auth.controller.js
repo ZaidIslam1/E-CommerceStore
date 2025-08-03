@@ -1,7 +1,6 @@
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { redis } from "../config/redis.js";
-import bcrypt from "bcryptjs";
 
 const generateTokens = (userId) => {
     const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
@@ -14,7 +13,7 @@ const generateTokens = (userId) => {
 
 const storeRefreshToken = async (userId, refreshToken, next) => {
     try {
-        await redis.set(`refreshToken: ${userId}`, refreshToken, "EX", 60 * 60 * 24 * 7); // Store for 7 days
+        await redis.set(`refresh_token: ${userId}`, refreshToken, "EX", 60 * 60 * 24 * 7); // Store for 7 days
     } catch (error) {
         console.error("Redis error in storeRefreshToken:", error);
         next(error);
@@ -81,7 +80,7 @@ export const logout = async (req, res, next) => {
         const refreshToken = req.cookies.refreshToken;
         if (refreshToken) {
             const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-            await redis.del(`refreshToken: ${decoded.userId}`);
+            await redis.del(`refresh_token: ${decoded.userId}`);
         }
         res.clearCookie("refreshToken");
         res.clearCookie("accessToken");
@@ -102,7 +101,7 @@ export const refreshToken = async (req, res, next) => {
 
         try {
             const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-            const storedToken = await redis.get(`refreshToken: ${decoded.userId}`);
+            const storedToken = await redis.get(`refresh_token: ${decoded.userId}`);
             if (refreshToken !== storedToken) {
                 res.status(401).json({ message: "Invalid refresh token" });
             }
