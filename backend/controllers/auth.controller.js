@@ -128,6 +128,8 @@ export const refreshToken = async (req, res, next) => {
 
 export const getProfile = async (req, res, next) => {
     try {
+        const user = req.user;
+        res.status(200).json({ user });
     } catch (error) {
         console.error("Error in getProfile", error.message);
         next(error);
