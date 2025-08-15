@@ -2,15 +2,17 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { LogIn, Mail, Lock, ArrowRight, Loader } from "lucide-react";
+import { useUserStore } from "../../stores/useUserStore.js";
 
 const LoginPage = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const loading = false;
+    const { login, loading } = useUserStore();
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log(email, password);
+        login(email, password);
     };
 
     return (
@@ -22,8 +24,11 @@ const LoginPage = () => {
                 transition={{ duration: 0.8 }}
             >
                 <h2 className="mt-6 text-center text-3xl font-extrabold text-emerald-400">
-                    Create your account
+                    Welcome back!
                 </h2>
+                <p className="mt-2 text-center text-sm text-gray-400">
+                    Please login to your account
+                </p>
             </motion.div>
 
             <motion.div
@@ -55,7 +60,7 @@ const LoginPage = () => {
 									rounded-md shadow-sm
 									 placeholder-gray-400 focus:outline-none focus:ring-emerald-500 
 									 focus:border-emerald-500 sm:text-sm"
-                                    placeholder="example@address.com"
+                                    placeholder="example@email.com"
                                 />
                             </div>
                         </div>

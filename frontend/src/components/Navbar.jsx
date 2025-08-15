@@ -1,19 +1,15 @@
 import { ShoppingCart, UserPlus, LogIn, LogOut, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { useUserStore } from "../stores/useUserStore.js";
 
 const Navbar = () => {
-    // const { user, logout } = useUserStore();
+    const { user, logout } = useUserStore();
     // const isAdmin = user?.role === "admin";
     // const { cart } = useCartStore();
 
-    const user = false;
     const isAdmin = true;
-    const logout = () => {
-        // Simulate logout action
-        toast.success("Logged out successfully");
-        console.log("User logged out");
-    };
+
     const cart = [
         { id: 1, name: "Item 1" },
         { id: 2, name: "Item 2" },

@@ -5,8 +5,10 @@ import SignupPage from "./pages/auth/SignupPage";
 import Navbar from "./components/Navbar";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CartPage from "./pages/CartPage";
+import { useUserStore } from "./stores/useUserStore.js";
 
 function App() {
+    const { user } = useUserStore();
     return (
         <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
             {/* Background gradient */}
@@ -16,11 +18,14 @@ function App() {
             <div className="relative z-10 pt-20">
                 <Navbar />
                 <Routes>
-                    <Route path="/" element={<Homepage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/signup" element={<SignupPage />} />
-                    <Route path="/admin-dashboard" element={<AdminDashboard />} />
-                    <Route path="/cart" element={<CartPage />} />
+                    <Route path="/" element={user ? <Homepage /> : <LoginPage />} />
+                    <Route path="/login" element={user ? <Homepage /> : <LoginPage />} />
+                    <Route path="/signup" element={user ? <Homepage /> : <SignupPage />} />
+                    <Route
+                        path="/admin-dashboard"
+                        element={user ? <AdminDashboard /> : <LoginPage />}
+                    />
+                    <Route path="/cart" element={user ? <CartPage /> : <LoginPage />} />
                 </Routes>
             </div>
         </div>

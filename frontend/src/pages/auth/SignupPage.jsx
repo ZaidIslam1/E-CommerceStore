@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { UserPlus, Mail, Lock, User, ArrowRight, Loader } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUserStore } from "../../stores/useUserStore.js";
 
 const SignUpPage = () => {
-    const loading = false;
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -12,9 +12,10 @@ const SignUpPage = () => {
         confirmPassword: "",
     });
 
-    const handleSubmit = (e) => {
+    const { signup, loading } = useUserStore();
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Form submitted:", formData);
+        await signup(formData);
     };
 
     return (
@@ -59,7 +60,7 @@ const SignUpPage = () => {
                                     }
                                     className="block w-full px-3 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-md shadow-sm
 									 placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                                    placeholder="John Doe"
+                                    placeholder="example: John Doe"
                                 />
                             </div>
                         </div>
@@ -87,7 +88,7 @@ const SignUpPage = () => {
 									rounded-md shadow-sm
 									 placeholder-gray-400 focus:outline-none focus:ring-emerald-500 
 									 focus:border-emerald-500 sm:text-sm"
-                                    placeholder="example@address.com"
+                                    placeholder="example@email.com"
                                 />
                             </div>
                         </div>
