@@ -7,7 +7,7 @@ const Navbar = () => {
     // const isAdmin = user?.role === "admin";
     // const { cart } = useCartStore();
 
-    const user = true;
+    const user = false;
     const isAdmin = true;
     const logout = () => {
         // Simulate logout action
