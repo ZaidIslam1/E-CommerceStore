@@ -11,7 +11,7 @@ const router = Router();
 router.use(protectRoute);
 
 router.get("/", getCartProducts);
-router.post("/", addToCart);
+router.post("/add", addToCart);
 router.put("/:id", updateQuantity);
 router.delete("/", removeAllQuantity);
 
