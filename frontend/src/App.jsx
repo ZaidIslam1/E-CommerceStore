@@ -6,9 +6,18 @@ import Navbar from "./components/Navbar";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CartPage from "./pages/CartPage";
 import { useUserStore } from "./stores/useUserStore.js";
+import { useEffect } from "react";
+import LoadingSpinner from "./components/LoadingSpinner";
+import CategoryPage from "./pages/CategoryPage.jsx";
 
 function App() {
-    const { user } = useUserStore();
+    const { user, loading, checkAuth } = useUserStore();
+    useEffect(() => {
+        checkAuth(); // Check if user is logged in on app load
+    }, [checkAuth]);
+
+    if (loading) return <LoadingSpinner />;
+
     return (
         <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
             {/* Background gradient */}
@@ -18,14 +27,15 @@ function App() {
             <div className="relative z-10 pt-20">
                 <Navbar />
                 <Routes>
-                    <Route path="/" element={user ? <Homepage /> : <LoginPage />} />
+                    <Route path="/" element={<Homepage />} />
                     <Route path="/login" element={user ? <Homepage /> : <LoginPage />} />
                     <Route path="/signup" element={user ? <Homepage /> : <SignupPage />} />
                     <Route
                         path="/admin-dashboard"
-                        element={user ? <AdminDashboard /> : <LoginPage />}
+                        element={user?.role === "admin" ? <AdminDashboard /> : <LoginPage />}
                     />
                     <Route path="/cart" element={user ? <CartPage /> : <LoginPage />} />
+                    <Route path="/category/:category" element={<CategoryPage />} />
                 </Routes>
             </div>
         </div>
