@@ -9,14 +9,21 @@ import { useUserStore } from "./stores/useUserStore.js";
 import { useEffect } from "react";
 import LoadingSpinner from "./components/LoadingSpinner";
 import CategoryPage from "./pages/CategoryPage.jsx";
+import { useCartStore } from "./stores/useCartStore.js";
+import PurchaseSuccessPage from "./components/PurchaseSuccessPage.jsx";
+import PurchaseCancelPage from "./components/PurchaseCancelPage.jsx";
+import { Navigate } from "react-router-dom";
 
 function App() {
-    const { user, loading, checkAuth } = useUserStore();
+    const { user, loading, checkingAuth, checkAuth } = useUserStore();
+    const { getCartItems } = useCartStore();
+
     useEffect(() => {
         checkAuth(); // Check if user is logged in on app load
-    }, [checkAuth]);
+        getCartItems();
+    }, [checkAuth, getCartItems]);
 
-    if (loading) return <LoadingSpinner />;
+    if (loading || checkingAuth) return <LoadingSpinner />;
 
     return (
         <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
@@ -36,6 +43,8 @@ function App() {
                     />
                     <Route path="/cart" element={user ? <CartPage /> : <LoginPage />} />
                     <Route path="/category/:category" element={<CategoryPage />} />
+                    <Route path="/purchase-success" element={<PurchaseSuccessPage />} />
+                    <Route path="/purchase-cancel" element={<PurchaseCancelPage />} />
                 </Routes>
             </div>
         </div>

@@ -1,4 +1,5 @@
 import Product from "../models/product.model.js";
+import User from "../models/user.model.js";
 
 export const getCartProducts = async (req, res, next) => {
     try {
@@ -112,6 +113,32 @@ export const removeAllQuantity = async (req, res, next) => {
         res.status(200).json({ success: true, cartItems: user.cartItems });
     } catch (error) {
         console.error("Error in removeAllQuantity", error.message);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const clearCart = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+
+        // Use findByIdAndUpdate to avoid version conflicts
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $set: { cartItems: [] } },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Cart cleared successfully",
+            cartItems: [],
+        });
+    } catch (error) {
+        console.error("Error in clearCart", error.message);
         res.status(500).json({ error: error.message });
     }
 };

@@ -26,7 +26,7 @@ const couponSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true,
-            unique: true, // Assuming one coupon per user
+            // Removed unique constraint to allow multiple coupons per user
         },
     },
     {

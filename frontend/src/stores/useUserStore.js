@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import axiosInstance from "../lib/axios";
 import { toast } from "react-hot-toast";
+import { useCartStore } from "./useCartStore";
 
 export const useUserStore = create((set, get) => ({
     user: null,
@@ -28,7 +29,8 @@ export const useUserStore = create((set, get) => ({
         try {
             const response = await axiosInstance.post("/auth/login", { email, password });
             set({ user: response.data.user, loading: false, error: null });
-            console.log("User logged in:", response.data.user);
+            const { getCartItems } = useCartStore.getState();
+            await getCartItems();
         } catch (error) {
             set({ error: error.response.data.error, loading: false });
             toast.error(error.response.data.error);

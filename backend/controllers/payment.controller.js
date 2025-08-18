@@ -16,41 +16,79 @@ const findValidCoupon = async (couponCode, userId) => {
 
 export const checkoutSuccess = async (req, res, next) => {
     try {
-        const sessionId = req.body;
+        const { sessionId } = req.body;
+
+        if (!sessionId) {
+            return res.status(400).json({ error: "Session ID is required" });
+        }
+
         const session = await stripe.checkout.sessions.retrieve(sessionId);
 
         if (session.payment_status === "paid") {
+            const userId = session.metadata.userId;
+
+            // Check if order already exists for this session (using session.id for consistency)
+            const existingOrder = await Order.findOne({ stripeSessionId: session.id });
+            if (existingOrder) {
+                return res.status(200).json({
+                    success: true,
+                    message: "Order already processed",
+                    orderId: existingOrder._id,
+                });
+            }
+
             if (session.metadata.couponCode) {
                 await Coupon.findOneAndUpdate(
-                    { code: session.metadata.couponCode, userId: req.user._id },
+                    { code: session.metadata.couponCode, userId: userId },
                     { isActive: false }
                 );
             }
 
             const products = JSON.parse(session.metadata.products);
+
             const newOrder = new Order({
-                userId: session.metadata.userId,
+                user: userId,
                 products: products.map((p) => ({
                     product: p.id,
                     quantity: p.quantity,
                     price: p.price,
                 })),
-                totalAmount: session.amount_total / 100, // Convert cents to dollars
+                totalAmount: session.amount_total / 100,
                 couponCode: session.metadata.couponCode || null,
                 stripeSessionId: session.id,
             });
 
-            await order.save();
-            return res.status(200).json({
-                success: true,
-                message: "Order placed successfully",
-                orderId: newOrder._id,
+            try {
+                await newOrder.save();
+                return res.status(200).json({
+                    success: true,
+                    message: "Order placed successfully",
+                    orderId: newOrder._id,
+                });
+            } catch (saveError) {
+                // Handle duplicate key error specifically
+                if (saveError.code === 11000 && saveError.keyPattern?.stripeSessionId) {
+                    // Order was created by another request, find and return it
+                    const existingOrder = await Order.findOne({ stripeSessionId: session.id });
+                    if (existingOrder) {
+                        return res.status(200).json({
+                            success: true,
+                            message: "Order already processed",
+                            orderId: existingOrder._id,
+                        });
+                    }
+                }
+                throw saveError; // Re-throw if it's a different error
+            }
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: `Payment not completed. Status: ${session.payment_status}`,
+                paymentStatus: session.payment_status,
             });
         }
-
-        res.status(200).json({ message: "Payment successful", session });
     } catch (error) {
-        console.log("Error in checkoutSuccess", error.message);
+        console.log("Error in checkoutSuccess:", error.message);
         next(error);
     }
 };
@@ -76,6 +114,7 @@ export const createCheckoutSession = async (req, res, next) => {
                     },
                     unit_amount: amount, // Stripe expects amount in cents
                 },
+                quantity: product.quantity || 1,
             };
         });
 
