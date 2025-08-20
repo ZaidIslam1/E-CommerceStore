@@ -8,11 +8,14 @@ import paymentRoutes from "./routes/payment.route.js";
 import analyticsRoutes from "./routes/analytics.route.js";
 import connectDB from "./config/connectDB.js";
 import cookieParser from "cookie-parser";
+import path from "path";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const __dirname = path.resolve();
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -28,6 +31,13 @@ app.use("/api/analytics", analyticsRoutes);
 app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
 });
+
+if (process.env.NODE_ENV === "production") {
+    app.use(express.static(path.join(__dirname, "frontend", "dist")));
+    app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+    });
+}
 
 app.listen(PORT, () => {
     connectDB();

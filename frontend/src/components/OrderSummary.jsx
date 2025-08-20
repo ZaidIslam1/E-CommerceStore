@@ -5,6 +5,7 @@ import { MoveRight } from "lucide-react";
 import axiosInstance from "../lib/axios";
 import { toast } from "react-hot-toast";
 import { useEffect, useState } from "react";
+import { loadStripe } from "@stripe/stripe-js";
 
 const OrderSummary = () => {
     const { total, subtotal, coupon, isCouponApplied, cartItems } = useCartStore();
@@ -19,7 +20,6 @@ const OrderSummary = () => {
     useEffect(() => {
         const loadStripeAsync = async () => {
             try {
-                const { loadStripe } = await import("@stripe/stripe-js");
                 const stripeInstance = await loadStripe(
                     "pk_test_51RuSmg0iGbxZoUEDUDOYgCuMw8mhtBuengwpnBKdtA5KrB7swWlNDZQzarzw8lXae6xG5kYdpUn2wwKmmN2YWOni00N1xMuoaB"
                 );
@@ -32,7 +32,7 @@ const OrderSummary = () => {
         };
 
         loadStripeAsync();
-    }, [loadStripeAsync]);
+    }, []);
 
     const handleStripePayment = async () => {
         if (stripeLoading) {
