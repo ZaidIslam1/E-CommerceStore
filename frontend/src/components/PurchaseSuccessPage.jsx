@@ -1,39 +1,68 @@
-import { ArrowRight, CheckCircle, HandHeart } from "lucide-react";
+import { ArrowRight, CheckCircle, HandHeart, Gift, Copy, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/useCartStore";
 import axiosInstance from "../lib/axios";
 import Confetti from "react-confetti";
+import { toast } from "react-hot-toast";
 
 const PurchaseSuccessPage = () => {
     const [isProcessing, setIsProcessing] = useState(true);
     const { clearCart } = useCartStore();
     const [error, setError] = useState(null);
     const [orderId, setOrderId] = useState(null);
+    const [nextOrderCoupon, setNextOrderCoupon] = useState(null);
+    const [copied, setCopied] = useState(false);
+    const [hasProcessed, setHasProcessed] = useState(false); // Prevent multiple calls
+
+    const copyToClipboard = async (text) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            toast.success("Coupon code copied to clipboard!");
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            toast.error("Failed to copy coupon code");
+        }
+    };
 
     useEffect(() => {
         const handleCheckoutSuccess = async (sessionId) => {
+            // Check if this session was already processed (using localStorage)
+            const processedKey = `processed_${sessionId}`;
+            if (localStorage.getItem(processedKey) || hasProcessed) {
+                setIsProcessing(false);
+                return;
+            }
+
+            // Mark as processing immediately
+            setHasProcessed(true);
+            localStorage.setItem(processedKey, "true");
+
             try {
                 const response = await axiosInstance.post("/payment/checkout-success", {
                     sessionId,
                 });
                 setOrderId(response.data.orderId);
+                if (response.data.nextOrderCoupon) {
+                    setNextOrderCoupon(response.data.nextOrderCoupon);
+                }
                 clearCart();
             } catch (error) {
-                console.log(error);
+                setError(error.response?.data?.message || "Something went wrong");
+                localStorage.removeItem(processedKey);
             } finally {
                 setIsProcessing(false);
             }
         };
-
         const sessionId = new URLSearchParams(window.location.search).get("session_id");
-        if (sessionId) {
+        if (sessionId && !hasProcessed) {
             handleCheckoutSuccess(sessionId);
-        } else {
+        } else if (!sessionId) {
             setIsProcessing(false);
             setError("No session ID found in the URL");
         }
-    }, [clearCart]);
+    }, [clearCart, hasProcessed]); // Add dependencies
 
     if (isProcessing) return "Processing...";
 
@@ -79,6 +108,47 @@ const PurchaseSuccessPage = () => {
                             </span>
                         </div>
                     </div>
+
+                    {nextOrderCoupon && (
+                        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg p-4 mb-6 border-2 border-emerald-400">
+                            <div className="flex items-center justify-center mb-2">
+                                <Gift className="text-white w-6 h-6 mr-2" />
+                                <h3 className="text-lg font-bold text-white">🎉 Bonus Reward!</h3>
+                            </div>
+                            <p className="text-emerald-100 text-center text-sm mb-3">
+                                Congratulations! Your purchase was over $200. Here's a special
+                                coupon for your next order:
+                            </p>
+                            <div className="bg-white rounded-lg p-3 text-center">
+                                <div className="flex items-center justify-center gap-2 mb-1">
+                                    <div className="text-emerald-700 font-bold text-lg">
+                                        {nextOrderCoupon.code}
+                                    </div>
+                                    <button
+                                        onClick={() => copyToClipboard(nextOrderCoupon.code)}
+                                        className="p-1 hover:bg-emerald-100 rounded transition-colors duration-200"
+                                        title="Copy coupon code"
+                                    >
+                                        {copied ? (
+                                            <Check className="w-4 h-4 text-emerald-600" />
+                                        ) : (
+                                            <Copy className="w-4 h-4 text-emerald-600" />
+                                        )}
+                                    </button>
+                                </div>
+                                <div className="text-emerald-600 text-sm font-semibold">
+                                    {nextOrderCoupon.discountPercentage}% OFF
+                                </div>
+                                <div className="text-gray-500 text-xs mt-1">
+                                    Expires:{" "}
+                                    {new Date(nextOrderCoupon.expirationDate).toLocaleDateString()}
+                                </div>
+                            </div>
+                            <p className="text-emerald-100 text-center text-xs mt-2">
+                                Click the copy button to save this code for your next purchase!
+                            </p>
+                        </div>
+                    )}
 
                     <div className="space-y-4">
                         <button

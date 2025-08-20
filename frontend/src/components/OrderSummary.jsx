@@ -12,21 +12,19 @@ const OrderSummary = () => {
     const [stripeLoading, setStripeLoading] = useState(true);
 
     const savings = subtotal - total;
-    const formattedSubtotal = subtotal.toFixed(2);
-    const formattedTotal = total.toFixed(2);
-    const formattedSavings = savings.toFixed(2);
+    const formattedSubtotal = (isNaN(subtotal) ? 0 : subtotal).toFixed(2);
+    const formattedTotal = (isNaN(total) ? 0 : total).toFixed(2);
+    const formattedSavings = (isNaN(savings) || savings <= 0 ? 0 : savings).toFixed(2);
 
     useEffect(() => {
         const loadStripeAsync = async () => {
             try {
-                // Dynamic import to avoid module loading issues
                 const { loadStripe } = await import("@stripe/stripe-js");
                 const stripeInstance = await loadStripe(
                     "pk_test_51RuSmg0iGbxZoUEDUDOYgCuMw8mhtBuengwpnBKdtA5KrB7swWlNDZQzarzw8lXae6xG5kYdpUn2wwKmmN2YWOni00N1xMuoaB"
                 );
                 setStripe(stripeInstance);
             } catch (error) {
-                console.error("Failed to load Stripe:", error);
                 toast.error("Payment system unavailable");
             } finally {
                 setStripeLoading(false);
@@ -34,7 +32,7 @@ const OrderSummary = () => {
         };
 
         loadStripeAsync();
-    }, []);
+    }, [loadStripeAsync]);
 
     const handleStripePayment = async () => {
         if (stripeLoading) {
@@ -50,7 +48,7 @@ const OrderSummary = () => {
         try {
             const response = await axiosInstance.post("/payment/create-checkout-session", {
                 products: cartItems,
-                coupon: coupon ? coupon.code : null,
+                couponCode: coupon ? coupon.code : null,
             });
 
             const session = response.data;
@@ -59,10 +57,8 @@ const OrderSummary = () => {
             if (result.error) {
                 toast.error(result.error.message);
             }
-            console.log("session here", response.data);
         } catch (error) {
-            console.error("Stripe payment error:", error);
-            toast.error("Failed to initiate payment");
+            toast.error(error.response?.data?.error || "Failed to initiate payment");
         }
     };
     return (

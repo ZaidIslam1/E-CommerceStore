@@ -6,6 +6,6 @@ const router = Router();
 router.use(protectRoute);
 
 router.get("/", getCoupon);
-router.get("/validate", validateCoupon);
+router.post("/validate", validateCoupon);
 
 export default router;

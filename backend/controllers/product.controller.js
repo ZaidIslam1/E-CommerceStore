@@ -16,11 +16,11 @@ export const getFeatured = async (req, res, next) => {
     try {
         let featured = await redis.get("featured_products");
         if (featured) {
-            return res.json(JSON.parse(featured));
+            return res.json({ featured: JSON.parse(featured) });
         }
 
         featured = await Product.find({ isFeatured: true }).lean();
-        if (!featured) {
+        if (!featured || featured.length === 0) {
             return res.status(404).json({ message: "No featured products found" });
         }
 

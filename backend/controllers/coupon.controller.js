@@ -2,7 +2,7 @@ import Coupon from "../models/coupon.model.js";
 
 export const getCoupon = async (req, res, next) => {
     try {
-        const coupon = await Coupon.find({ userId: req.user._id, isActive: true }).lean();
+        const coupon = await Coupon.findOne({ userId: req.user._id, isActive: true }).lean();
         res.status(200).json(coupon || null);
     } catch (error) {
         console.error("Error in getCoupon", error.message);
@@ -19,7 +19,7 @@ export const validateCoupon = async (req, res, next) => {
             isActive: true,
         }).lean();
         if (!coupon) {
-            return res.status(404).json({ message: "Coupon not found or inactive" });
+            return res.status(404).json({ message: "Invalid Code" });
         }
         const currentDate = new Date();
         if (coupon.expirationDate < currentDate) {

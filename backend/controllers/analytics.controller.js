@@ -58,7 +58,7 @@ const getAnalyticsData = async () => {
                 $group: {
                     _id: null,
                     totalSales: { $sum: 1 },
-                    totalRevenue: { $sum: "$totalPrice" },
+                    totalRevenue: { $sum: "$totalAmount" },
                 },
             },
         ]);

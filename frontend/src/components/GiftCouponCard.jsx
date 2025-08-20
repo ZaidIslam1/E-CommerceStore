@@ -1,10 +1,15 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useCartStore } from "../stores/useCartStore";
+import { get } from "mongoose";
 
 const GiftCouponCard = () => {
     const [userInputCode, setUserInputCode] = useState("");
-    const { coupon, isCouponApplied } = useCartStore();
+    const { coupon, isCouponApplied, applyCoupon, removeCoupon, getCoupon } = useCartStore();
+
+    useEffect(() => {
+        getCoupon();
+    }, [getCoupon]);
 
     const handleApplyCoupon = () => {
         if (!userInputCode) return;
@@ -12,8 +17,9 @@ const GiftCouponCard = () => {
     };
 
     const handleRemoveCoupon = async () => {
-        // await removeCoupon();
+        await removeCoupon();
         setUserInputCode("");
+        getCoupon();
     };
 
     return (
@@ -76,7 +82,7 @@ const GiftCouponCard = () => {
                 </div>
             )}
 
-            {coupon && (
+            {coupon && !isCouponApplied && coupon.code && coupon.discountPercentage && (
                 <div className="mt-4">
                     <h3 className="text-lg font-medium text-gray-300">Your Available Coupon:</h3>
                     <p className="mt-2 text-sm text-gray-400">
