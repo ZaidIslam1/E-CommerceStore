@@ -13,7 +13,7 @@ import path from "path";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000; // Render typically uses port 10000
 
 const __dirname = path.resolve();
 
@@ -32,14 +32,17 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
 });
 
+// Serve static files in production
 if (process.env.NODE_ENV === "production") {
-    app.use(express.static(path.join(__dirname, "/frontend/dist")));
+    app.use(express.static(path.join(__dirname, "frontend", "dist")));
+
+    // Handle client-side routing
     app.get("*", (req, res) => {
-        res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+        res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
     });
 }
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
     connectDB();
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
