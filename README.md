@@ -2,8 +2,6 @@
 
 A full-stack e-commerce application built with modern web technologies, featuring user authentication, product management, shopping cart functionality, payment processing, and comprehensive analytics.
 
-![E-Commerce Store](./frontend/public/screenshot-for-readme.png)
-
 ## 🚀 Live Demo
 
 **🌐 [Live Application](https://e-commercestore-icdh.onrender.com)**
